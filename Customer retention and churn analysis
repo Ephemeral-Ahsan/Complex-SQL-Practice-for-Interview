@@ -71,8 +71,22 @@ order by current_order_month asc ;
 
 
 
+/* tricky but amazing solution from a genious one  */
+
+with retention_map as 
+	(select *, count(1) over(partition by cust_id order by order_date rows between unbounded preceding and current row)  as retention_map 
+	from transactions ) 
+select   date_part( 'month', order_date) as month , sum( case when  retention_map > 1 then 1 else 0 end)  as retetion_count
+from retention_map
+group by  date_part( 'month', order_date) ;
 
 
+with churn_map as 
+	(select *, count(1) over(partition by cust_id order by order_date rows between current row and unbounded following)  as churn_map 
+	from transactions ) 
+select  date_part( 'month', order_date) as month , sum( case when  churn_map > 1 then 0 else 1 end)  as churn_count
+from churn_map
+group by  date_part( 'month', order_date) ;
 
 
 
